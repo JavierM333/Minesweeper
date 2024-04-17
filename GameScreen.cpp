@@ -1,17 +1,18 @@
 #include <string>
 #include <fstream>
+#include <sstream>
 #include "GameScreen.h"
 #include "Leaderboard.h"
+#include "Welcome.h"
 #include "SFML/Graphics.hpp"
 #include <ctime>
 
 using namespace std;
 
-GameScreen::GameScreen(int row, int col, int mines) : row(row), col(col) {
+GameScreen::GameScreen(int row, int col, int mines, std::string name) : row(row), col(col), name(name) {
     count = mines;
     total = row * col - mines;
     start = std::chrono::system_clock::now();
-    CounterUpdate(row);
     srand(time(nullptr)); // Seed the random number generator
     double mineRatio = static_cast<double>(mines) / (row * col);
     // Texture for mines
@@ -110,6 +111,7 @@ GameScreen::GameScreen(int row, int col, int mines) : row(row), col(col) {
         digit->sprite.setPosition(33 + i * 21, 32 * (row + 0.5) + 16);
         Counter.push_back(std::move(digit));
     }
+    CounterUpdate(row);
     for (int i = 0; i < 2; i++) {
         auto digit = std::make_unique<Button>();
         digit->sprite.setTexture(digits);
@@ -318,7 +320,6 @@ void GameScreen::CounterUpdate(int row) {
             Counter.erase(Counter.begin() + 1);
         }
     } else if (count >= 0 && Counter.size() > 3) {
-        //delete neg
         Counter.erase(Counter.begin());
     }
     for (int i = 0; i < 3; i++) {
@@ -366,8 +367,34 @@ void GameScreen::Validate() {
 void GameScreen::addToLeaderboard() {
     auto now = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - start);
-    // MM:SS, name to leaderboard.txt
-    string time = std::to_string(elapsed.count() / 60) + std::to_string(elapsed.count() % 60);
-    string fullLeaderBoard = time + ",";
+    string minutes = std::to_string(elapsed.count() / 60);
+    string seconds = std::to_string(elapsed.count() % 60);
+    if (minutes.size() == 1) minutes = "0" + minutes;
+    if (seconds.size() == 1) seconds = "0" + seconds;
+    string time = minutes + ":" + seconds;
+    string fullLeaderBoard = time + ", " + name;
 
+    std::fstream file("files/leaderboard.txt", std::ios::in | std::ios::out);
+    std::vector<std::pair<std::string, std::string>> scores;
+    std::string line;
+    while (std::getline(file, line)) {
+        std::istringstream iss(line);
+        std::string time, name;
+        if (!(std::getline(iss, time, ',') >> name)) { break; } // error
+        scores.push_back({time, name});
+    }
+    file.close(); // Close the file after reading
+
+    scores.push_back({time, name});
+    std::sort(scores.begin(), scores.end());
+
+    if (scores.size() > 5) {
+        scores.erase(scores.begin() + 5, scores.end());
+    }
+
+    file.open("files/leaderboard.txt", std::ios::out | std::ios::trunc); // Open the file in out mode, which truncates the file
+    for (const auto& score : scores) {
+        file << score.first << ", " << score.second << "\n";
+    }
+    file.close();
 }

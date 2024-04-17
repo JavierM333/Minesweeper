@@ -26,6 +26,7 @@ struct Tile {
 
 class GameScreen {
 private:
+    std::string name;
     int row;
     int col;
     int count;
@@ -51,7 +52,7 @@ private:
     std::unique_ptr<Button> PausePlay;
     std::vector<std::unique_ptr<Button>> timer;
 public:
-    GameScreen(int row, int col, int mines);
+    GameScreen(int row, int col, int mines, std::string string);
 
     void HandleMines(Tile *tile);
 

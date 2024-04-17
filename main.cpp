@@ -22,11 +22,12 @@ int main() {
         cout << "Error: Invalid config.cfg file or too many mines!" << endl;
         return 0;
     }
-
-    if (Welcome(row, col).isClosed()) { return 0; }
-    GameScreen game(row, col, mines);
+    Welcome welc(row,col);
+    string temp = welc.getName();
+    if (welc.isClosed()) { return 0;}
+    GameScreen game(row, col, mines, temp);
     while (game.getRestartStatus()) {
-        game = GameScreen(row, col, mines);
+        game = GameScreen(row, col, mines, temp);
     }
     return 0;
 }
