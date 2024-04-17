@@ -1,6 +1,7 @@
 #include <SFML/Graphics.hpp>
 #include "Welcome.h"
 #include "GameScreen.h"
+#include "Leaderboard.h"
 #include <fstream>
 #include <iostream>
 

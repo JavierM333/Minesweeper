@@ -1,11 +1,13 @@
 #include <string>
+#include <fstream>
 #include "GameScreen.h"
+#include "Leaderboard.h"
 #include "SFML/Graphics.hpp"
 #include <ctime>
 
 using namespace std;
 
-GameScreen::GameScreen(int row, int col, int mines) {
+GameScreen::GameScreen(int row, int col, int mines) : row(row), col(col) {
     count = mines;
     total = row * col - mines;
     start = std::chrono::system_clock::now();
@@ -65,23 +67,23 @@ GameScreen::GameScreen(int row, int col, int mines) {
     Debug->sprite.setTexture(Debug->texture);
     Debug->sprite.setPosition((col * 32) - 304, 32 * (row + 0.5));
     Debug->onClick = [this]() {
-    if(won){return;}
-    DebugMode = !DebugMode; // Toggle DebugMode
-    for (auto &t: tiles) {
-        if (DebugMode) {
-            if (!t->mine) continue;
-            t->texture = mineTexture;
-            t->bottom = hiddenTexture;
-        } else {
-            // If DebugMode is off, check if the tile is flagged
-            if (t->mine && !t->flag) {
-                t->texture = hiddenTexture;
-            } else if (t->flag) {
-                t->texture = flagTexture;
+        if (won) { return; }
+        DebugMode = !DebugMode; // Toggle DebugMode
+        for (auto &t: tiles) {
+            if (DebugMode) {
+                if (!t->mine) continue;
+                t->texture = mineTexture;
+                t->bottom = hiddenTexture;
+            } else {
+                // If DebugMode is off, check if the tile is flagged
+                if (t->mine && !t->flag) {
+                    t->texture = hiddenTexture;
+                } else if (t->flag) {
+                    t->texture = flagTexture;
+                }
             }
         }
-    }
-};
+    };
 
     // PlayPause button
     PausePlay = std::make_unique<Button>();
@@ -89,7 +91,7 @@ GameScreen::GameScreen(int row, int col, int mines) {
     PausePlay->sprite.setTexture(PausePlay->texture);
     PausePlay->sprite.setPosition((col * 32) - 240, 32 * (row + 0.5));
     PausePlay->onClick = [this]() {
-        if(won){return;}
+        if (won) { return; }
         Running = !Running; // Toggle Running
         if (Running) {
             PausePlay->texture.loadFromFile("files/images/play.png");
@@ -125,9 +127,12 @@ GameScreen::GameScreen(int row, int col, int mines) {
     leaderboard = std::make_unique<Button>();
     leaderboard->texture.loadFromFile("files/images/leaderboard.png");
     leaderboard->sprite.setTexture(leaderboard->texture);
-    leaderboard->sprite.setPosition((col*32)-176,32*(row+0.5));
-    leaderboard->onClick = [this](){
-        //todo: implement the leaderboard screen
+    leaderboard->sprite.setPosition((col * 32) - 176, 32 * (row + 0.5));
+    leaderboard->onClick = [this]() {
+        if(won){
+            addToLeaderboard();
+        }
+        Leaderboard board(this->row, this->col);
     };
     /*
      *
@@ -167,12 +172,19 @@ GameScreen::GameScreen(int row, int col, int mines) {
                         FaceButton->sprite.getGlobalBounds().contains(mousePos.x, mousePos.y)) {
                         FaceButton->onClick();
                     }
+                    //leaderboard button pressed
+                    if (sf::Mouse::isButtonPressed(sf::Mouse::Left) &&
+                        leaderboard->sprite.getGlobalBounds().contains(mousePos.x, mousePos.y)) {
+                        PausePlay->onClick();
+                        leaderboard->onClick();
+                        PausePlay->onClick();
+                    }
                     if (!Running) { break; }
                     //checks which sprite was clicked
                     if (event.mouseButton.button == sf::Mouse::Left) {
                         if (tileX >= 0 && tileX < col && tileY >= 0 && tileY < row) {
                             Tile *tile = tiles[tileY * col + tileX].get();
-                            if (tile->revealed || tile->flag) { break;}
+                            if (tile->revealed || tile->flag) { break; }
                             if (tile->flag) {
                                 count++;
                                 CounterUpdate(row);
@@ -319,7 +331,7 @@ void GameScreen::CounterUpdate(int row) {
 }
 
 void GameScreen::TimerUpdate() {
-    if(won){return;}
+    if (won) { return;}
     //updates the timer
     auto now = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - start);
@@ -347,5 +359,15 @@ void GameScreen::Validate() {
     if (revealedTiles == total) {
         printf("won");
         won = true;
+        leaderboard->onClick();
     }
+}
+
+void GameScreen::addToLeaderboard() {
+    auto now = std::chrono::system_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - start);
+    // MM:SS, name to leaderboard.txt
+    string time = std::to_string(elapsed.count() / 60) + std::to_string(elapsed.count() % 60);
+    string fullLeaderBoard = time + ",";
+
 }

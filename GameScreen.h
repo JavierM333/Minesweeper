@@ -1,4 +1,5 @@
 #include "SFML/Graphics.hpp"
+#include "Leaderboard.h"
 #include <vector>
 
 #ifndef MINESWEEPER_GAMESCREEN_H
@@ -25,6 +26,8 @@ struct Tile {
 
 class GameScreen {
 private:
+    int row;
+    int col;
     int count;
     int total;
     bool RestartStatus = false;
@@ -61,6 +64,8 @@ public:
     void TimerUpdate();
 
     void Validate();
+
+    void addToLeaderboard();
 };
 
 
