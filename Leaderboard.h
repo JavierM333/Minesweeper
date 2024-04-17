@@ -3,14 +3,13 @@
 
 #ifndef TEMP_LEADERBOARD_H
 #define TEMP_LEADERBOARD_H
-struct name {
-    std::string name;
-    int score;
-    sf::Text text;
-};
+//todo: fill in the leaderboard file
 
 class Leaderboard {
-    map<int,
+private:
+    std::map<int,std::string> scores;
+public:
+    void fillScores();
 };
 
 

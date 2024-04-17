@@ -13,7 +13,7 @@ FetchContent_MakeAvailable(SFML)
 add_executable(Minesweeper main.cpp
         GameScreen.cpp
         Welcome.cpp
-        GameScreen.cpp
+        Leaderboard.cpp
 )
 target_link_libraries(Minesweeper PRIVATE sfml-graphics sfml-window sfml-system sfml-audio)
 target_compile_features(Minesweeper PRIVATE cxx_std_17)

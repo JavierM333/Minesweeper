@@ -1,6 +1,8 @@
 
-cmake-build-debug/Testing/Temporary/LastTest.log
+*.iml
+*.xml
+*.json
 /cmake-build-debug
-/.idea
 .DS_Store
-.gitattributes
+.idea/.name
+CMakeLists.txt

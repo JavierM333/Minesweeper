@@ -65,20 +65,23 @@ GameScreen::GameScreen(int row, int col, int mines) {
     Debug->sprite.setTexture(Debug->texture);
     Debug->sprite.setPosition((col * 32) - 304, 32 * (row + 0.5));
     Debug->onClick = [this]() {
-        DebugMode = !DebugMode; // Toggle DebugMode
-        for (auto &t: tiles) {
-            if (DebugMode) {
-                if (!t->mine)continue;
-                t->texture = mineTexture;
-                t->bottom = hiddenTexture;
-            } else {
-                // If DebugMode is off, hide the mines
-                if (t->mine && !t->flag) {
-                    t->texture = hiddenTexture;
-                }
+    if(won){return;}
+    DebugMode = !DebugMode; // Toggle DebugMode
+    for (auto &t: tiles) {
+        if (DebugMode) {
+            if (!t->mine) continue;
+            t->texture = mineTexture;
+            t->bottom = hiddenTexture;
+        } else {
+            // If DebugMode is off, check if the tile is flagged
+            if (t->mine && !t->flag) {
+                t->texture = hiddenTexture;
+            } else if (t->flag) {
+                t->texture = flagTexture;
             }
         }
-    };
+    }
+};
 
     // PlayPause button
     PausePlay = std::make_unique<Button>();
@@ -86,6 +89,7 @@ GameScreen::GameScreen(int row, int col, int mines) {
     PausePlay->sprite.setTexture(PausePlay->texture);
     PausePlay->sprite.setPosition((col * 32) - 240, 32 * (row + 0.5));
     PausePlay->onClick = [this]() {
+        if(won){return;}
         Running = !Running; // Toggle Running
         if (Running) {
             PausePlay->texture.loadFromFile("files/images/play.png");
@@ -118,6 +122,13 @@ GameScreen::GameScreen(int row, int col, int mines) {
         digit->sprite.setPosition((col * 32) - 97 + i * 21, 32 * (row + 0.5) + 16); // Second digits
         timer.push_back(std::move(digit));
     }
+    leaderboard = std::make_unique<Button>();
+    leaderboard->texture.loadFromFile("files/images/leaderboard.png");
+    leaderboard->sprite.setTexture(leaderboard->texture);
+    leaderboard->sprite.setPosition((col*32)-176,32*(row+0.5));
+    leaderboard->onClick = [this](){
+        //todo: implement the leaderboard screen
+    };
     /*
      *
      ******************************************************** Render Window Separation **********************************************************************
@@ -161,7 +172,7 @@ GameScreen::GameScreen(int row, int col, int mines) {
                     if (event.mouseButton.button == sf::Mouse::Left) {
                         if (tileX >= 0 && tileX < col && tileY >= 0 && tileY < row) {
                             Tile *tile = tiles[tileY * col + tileX].get();
-                            if (tile->revealed) { break; }
+                            if (tile->revealed || tile->flag) { break;}
                             if (tile->flag) {
                                 count++;
                                 CounterUpdate(row);
@@ -220,6 +231,7 @@ GameScreen::GameScreen(int row, int col, int mines) {
         Game.draw(FaceButton->sprite);
         Game.draw(Debug->sprite);
         Game.draw(PausePlay->sprite);
+        Game.draw(leaderboard->sprite);
         for (const auto &i: Counter) {
             Game.draw(i->sprite);
         }
@@ -280,6 +292,7 @@ void GameScreen::HandleNotMines(Tile *tile) {
 
 void GameScreen::CounterUpdate(int row) {
     //updates the count
+    //todo: counter doesn't work properly, doesn't display with inital value
     int absCount = abs(count);
     if (count < 0) {
         if (Counter.size() == 3 || Counter.size() > 4) {
@@ -306,6 +319,7 @@ void GameScreen::CounterUpdate(int row) {
 }
 
 void GameScreen::TimerUpdate() {
+    if(won){return;}
     //updates the timer
     auto now = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - start);
@@ -332,6 +346,6 @@ void GameScreen::Validate() {
 
     if (revealedTiles == total) {
         printf("won");
-        Running = false;
+        won = true;
     }
 }
