@@ -32,6 +32,7 @@ private:
     int count;
     int total;
     bool RestartStatus = false;
+    bool leaderboardstatus = false;
     bool DebugMode = false;
     bool Running = true;
     bool won = false;
@@ -54,6 +55,8 @@ private:
 public:
     GameScreen(int row, int col, int mines, std::string string);
 
+    void updateTileTexture(bool revealAll);
+
     void HandleMines(Tile *tile);
 
     void HandleNotMines(Tile *tile);
@@ -67,6 +70,8 @@ public:
     void Validate();
 
     void addToLeaderboard();
+
+    void displayTiles(GameScreen& game);
 };
 
 

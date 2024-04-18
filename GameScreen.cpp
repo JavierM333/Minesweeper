@@ -68,7 +68,7 @@ GameScreen::GameScreen(int row, int col, int mines, std::string name) : row(row)
     Debug->sprite.setTexture(Debug->texture);
     Debug->sprite.setPosition((col * 32) - 304, 32 * (row + 0.5));
     Debug->onClick = [this]() {
-        if (won) { return; }
+        if (won) { return;}
         DebugMode = !DebugMode; // Toggle DebugMode
         for (auto &t: tiles) {
             if (DebugMode) {
@@ -178,7 +178,8 @@ GameScreen::GameScreen(int row, int col, int mines, std::string name) : row(row)
                     if (sf::Mouse::isButtonPressed(sf::Mouse::Left) &&
                         leaderboard->sprite.getGlobalBounds().contains(mousePos.x, mousePos.y)) {
                         PausePlay->onClick();
-                        leaderboard->onClick();
+                        leaderboardstatus = true;
+                        updateTileTexture(true);
                         PausePlay->onClick();
                     }
                     if (!Running) { break; }
@@ -235,8 +236,8 @@ GameScreen::GameScreen(int row, int col, int mines, std::string name) : row(row)
                 sf::Sprite bottomSprite(tile->bottom);
                 bottomSprite.setPosition(j * 32, i * 32);
                 Game.draw(bottomSprite);
-
                 sf::Sprite sprite(tile->texture);
+                //todo: revealed tiles when leaderboard is open
                 sprite.setPosition(j * 32, i * 32);
                 Game.draw(sprite);
             }
@@ -253,6 +254,11 @@ GameScreen::GameScreen(int row, int col, int mines, std::string name) : row(row)
             Game.draw(i->sprite);
         }
         Game.display();
+        if(leaderboardstatus){
+            leaderboard->onClick();
+            leaderboardstatus = false;
+            updateTileTexture(false);
+        }
     }
 }
 
@@ -261,6 +267,7 @@ GameScreen::GameScreen(int row, int col, int mines, std::string name) : row(row)
  **************************************************************** End of Render Window *********************************************************************
  *
  */
+
 bool GameScreen::getRestartStatus() const {
     return RestartStatus;
 }
@@ -397,4 +404,24 @@ void GameScreen::addToLeaderboard() {
         file << score.first << ", " << score.second << "\n";
     }
     file.close();
+}
+
+void GameScreen::updateTileTexture(bool revealAll) {
+    for (auto &tile : tiles) {
+        if (revealAll) {
+            tile->texture = revealedTexture;
+        } else {
+            if (tile->revealed) {
+                if (tile->mine) {
+                    tile->texture = mineTexture;
+                } else {
+                    tile->texture = revealedTexture;
+                }
+            } else if (tile->flag) {
+                tile->texture = flagTexture;
+            } else {
+                tile->texture = hiddenTexture;
+            }
+        }
+    }
 }

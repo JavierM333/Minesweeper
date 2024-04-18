@@ -3,8 +3,8 @@
 #include <fstream>
 #include "Leaderboard.h"
 
-Leaderboard::Leaderboard(int row, int col) : width(col * 16), height((row * 16) + 50),
-                                             leaderboardWindow(sf::VideoMode(width, height), "Leaderboard") {
+Leaderboard::Leaderboard(int row, int col) : width(col * 16), height((row * 16) + 50), leaderboardWindow(sf::VideoMode(width, height), "Leaderboard") {
+    isOpen = true;
     readScores();
     fillScores();
     font.loadFromFile("files/font.ttf");
@@ -39,6 +39,7 @@ Leaderboard::Leaderboard(int row, int col) : width(col * 16), height((row * 16) 
         leaderboardWindow.draw(leader);
         leaderboardWindow.display();
     }
+    isOpen = false;
 }
 
 bool Leaderboard::IsOpen() const {
