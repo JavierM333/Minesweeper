@@ -28,6 +28,7 @@ public:
         int seconds = std::stoi(time.substr(3, 2));
         return minutes * 60 + seconds;
     }
+
     bool isWindowOpen() const {
         return leaderboardWindow.isOpen();
     }

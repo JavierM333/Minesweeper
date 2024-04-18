@@ -3,7 +3,8 @@
 #include <fstream>
 #include "Leaderboard.h"
 
-Leaderboard::Leaderboard(int row, int col) : width(col * 16), height((row * 16) + 50), leaderboardWindow(sf::VideoMode(width, height), "Leaderboard") {
+Leaderboard::Leaderboard(int row, int col) : width(col * 16), height((row * 16) + 50),
+                                             leaderboardWindow(sf::VideoMode(width, height), "Leaderboard") {
     isOpen = true;
     readScores();
     fillScores();

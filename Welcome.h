@@ -13,7 +13,7 @@ private:
 public:
     Welcome(int row, int col);
 
-    std::string getName() { return name;};
+    std::string getName() { return name; };
 
     bool isClosed() const;
 

@@ -71,7 +71,7 @@ public:
 
     void addToLeaderboard();
 
-    void displayTiles(GameScreen& game);
+    void displayTiles(GameScreen &game);
 };
 
 

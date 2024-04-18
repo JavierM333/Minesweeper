@@ -3,7 +3,6 @@
 #include <sstream>
 #include "GameScreen.h"
 #include "Leaderboard.h"
-#include "Welcome.h"
 #include "SFML/Graphics.hpp"
 #include <ctime>
 
@@ -68,7 +67,7 @@ GameScreen::GameScreen(int row, int col, int mines, std::string name) : row(row)
     Debug->sprite.setTexture(Debug->texture);
     Debug->sprite.setPosition((col * 32) - 304, 32 * (row + 0.5));
     Debug->onClick = [this]() {
-        if (won) { return;}
+        if (won) { return; }
         DebugMode = !DebugMode; // Toggle DebugMode
         for (auto &t: tiles) {
             if (DebugMode) {
@@ -131,7 +130,7 @@ GameScreen::GameScreen(int row, int col, int mines, std::string name) : row(row)
     leaderboard->sprite.setTexture(leaderboard->texture);
     leaderboard->sprite.setPosition((col * 32) - 176, 32 * (row + 0.5));
     leaderboard->onClick = [this]() {
-        if(won){
+        if (won) {
             addToLeaderboard();
         }
         Leaderboard board(this->row, this->col);
@@ -184,8 +183,8 @@ GameScreen::GameScreen(int row, int col, int mines, std::string name) : row(row)
                         //todo: even if game is paused, after leaderboard is closed, all actions done when paused shows
                         PausePlay->onClick();
                     }
-                    if (!Running) {break;}
-                    if(won){break;}
+                    if (!Running) { break; }
+                    if (won) { break; }
                     //checks which sprite was clicked
                     if (event.mouseButton.button == sf::Mouse::Left) {
                         if (tileX >= 0 && tileX < col && tileY >= 0 && tileY < row) {
@@ -257,7 +256,7 @@ GameScreen::GameScreen(int row, int col, int mines, std::string name) : row(row)
             Game.draw(i->sprite);
         }
         Game.display();
-        if(leaderboardstatus){
+        if (leaderboardstatus) {
             leaderboard->onClick();
             leaderboardstatus = false;
             updateTileTexture(false);
@@ -344,7 +343,7 @@ void GameScreen::CounterUpdate(int row) {
 }
 
 void GameScreen::TimerUpdate() {
-    if (won) { return;}
+    if (won) { return; }
     //updates the timer
     auto now = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - start);
@@ -394,28 +393,29 @@ void GameScreen::addToLeaderboard() {
         std::istringstream iss(line);
         std::string time, name;
         if (!(std::getline(iss, time, ',') >> name)) { break; } // error
-        scores.push_back({time, name});
+        scores.emplace_back(time, name);
     }
     file.close(); // Close the file after reading
 
-    scores.push_back({time, name});
+    scores.emplace_back(time, name);
     std::sort(scores.begin(), scores.end());
 
     if (scores.size() > 5) {
         scores.erase(scores.begin() + 5, scores.end());
     }
 
-    file.open("files/leaderboard.txt", std::ios::out | std::ios::trunc); // Open the file in out mode, which truncates the file
-    for (const auto& score : scores) {
+    file.open("files/leaderboard.txt",
+              std::ios::out | std::ios::trunc); // Open the file in out mode, which truncates the file
+    for (const auto &score: scores) {
         file << score.first << ", " << score.second << "\n";
     }
     file.close();
 }
 
 void GameScreen::updateTileTexture(bool revealAll) {
-    for (auto &tile : tiles) {
+    for (auto &tile: tiles) {
         if (revealAll) {
-
+            tile->texture = revealedTexture;
         } else {
             if (tile->revealed) {
                 if (tile->mine) {
