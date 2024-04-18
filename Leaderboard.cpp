@@ -64,6 +64,7 @@ void Leaderboard::readScores() {
 
 void Leaderboard::fillScores() {
     int i = 1;
+    finalLeaderboard.clear();
     for (auto it = scores.begin(); it != scores.end(); it++) {
         finalLeaderboard += std::to_string(i) + ". " + "\t" + it->second.first + "\t" + it->second.second + "\n\n";
         i++;

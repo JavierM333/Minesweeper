@@ -143,6 +143,7 @@ GameScreen::GameScreen(int row, int col, int mines, std::string name) : row(row)
      */
     sf::RenderWindow Game(sf::VideoMode(col * 32, (row * 32) + 100), "Minesweeper",
                           sf::Style::Close | sf::Style::Titlebar);
+    Game.setFramerateLimit(30);
     // runs while the game is open
     while (Game.isOpen()) {
         if (Running) {
@@ -180,9 +181,11 @@ GameScreen::GameScreen(int row, int col, int mines, std::string name) : row(row)
                         PausePlay->onClick();
                         leaderboardstatus = true;
                         updateTileTexture(true);
+                        //todo: even if game is paused, after leaderboard is closed, all actions done when paused shows
                         PausePlay->onClick();
                     }
-                    if (!Running) { break; }
+                    if (!Running) {break;}
+                    if(won){break;}
                     //checks which sprite was clicked
                     if (event.mouseButton.button == sf::Mouse::Left) {
                         if (tileX >= 0 && tileX < col && tileY >= 0 && tileY < row) {
@@ -313,8 +316,9 @@ void GameScreen::HandleNotMines(Tile *tile) {
 
 void GameScreen::CounterUpdate(int row) {
     //updates the count
-    //todo: counter doesn't work properly, doesn't display with inital value
+    //abs count to have only positive value
     int absCount = abs(count);
+    // in the case of flags exceeding mines, this will display a negative number
     if (count < 0) {
         if (Counter.size() == 3 || Counter.size() > 4) {
             auto neg = std::make_unique<Button>();
@@ -323,6 +327,7 @@ void GameScreen::CounterUpdate(int row) {
             neg->sprite.setPosition(12, 32 * (row + 0.5) + 16);
             Counter.insert(Counter.begin(), std::move(neg));
         }
+        //
         while (Counter.size() > 4) {
             Counter.erase(Counter.begin() + 1);
         }
@@ -367,7 +372,8 @@ void GameScreen::Validate() {
     if (revealedTiles == total) {
         printf("won");
         won = true;
-        leaderboard->onClick();
+        //todo: should update screen first then do the leaderboard
+        leaderboardstatus = true;
     }
 }
 
@@ -409,13 +415,13 @@ void GameScreen::addToLeaderboard() {
 void GameScreen::updateTileTexture(bool revealAll) {
     for (auto &tile : tiles) {
         if (revealAll) {
-            tile->texture = revealedTexture;
+
         } else {
             if (tile->revealed) {
                 if (tile->mine) {
                     tile->texture = mineTexture;
                 } else {
-                    tile->texture = revealedTexture;
+                    HandleNotMines(tile.get());
                 }
             } else if (tile->flag) {
                 tile->texture = flagTexture;
