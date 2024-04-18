@@ -10,6 +10,8 @@ using namespace std;
 
 GameScreen::GameScreen(int row, int col, int mines, std::string name) : row(row), col(col), name(name) {
     count = mines;
+    mineCount = mines;
+    int mineCount = mines;
     total = row * col - mines;
     start = std::chrono::system_clock::now();
     srand(time(nullptr)); // Seed the random number generator
@@ -22,6 +24,10 @@ GameScreen::GameScreen(int row, int col, int mines, std::string name) : row(row)
     revealedTexture.loadFromFile("files/images/tile_revealed.png");
     // Texture for flags
     flagTexture.loadFromFile("files/images/flag.png");
+    // Texture for win face
+    winTexture.loadFromFile("files/images/face_win.png");
+    // Texture for lose face
+    loseTexture.loadFromFile("files/images/face_lose.png");
     for (int i = 0; i < row * col; i++) {
         auto tile = std::make_unique<Tile>();
         tile->texture = hiddenTexture;
@@ -86,6 +92,7 @@ GameScreen::GameScreen(int row, int col, int mines, std::string name) : row(row)
     };
 
     // PlayPause button
+    //todo:: pause should reveal the whole board
     PausePlay = std::make_unique<Button>();
     PausePlay->texture.loadFromFile("files/images/play.png");
     PausePlay->sprite.setTexture(PausePlay->texture);
@@ -101,16 +108,17 @@ GameScreen::GameScreen(int row, int col, int mines, std::string name) : row(row)
             paused = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - start).count();
         }
     };
-    //Timer Button
+    //Counter Button
     digits.loadFromFile("files/images/digits.png");
     for (int i = 0; i < 4; ++i) {
         auto digit = std::make_unique<Button>();
         digit->sprite.setTexture(digits);
         digit->sprite.setTextureRect(sf::IntRect(0, 0, 21, 32)); // Set to '0'
-        digit->sprite.setPosition(33 + i * 21, 32 * (row + 0.5) + 16);
+        digit->sprite.setPosition(33 + (i * 21), 32 * (row + 0.5) + 16);
         Counter.push_back(std::move(digit));
     }
     CounterUpdate(row);
+    // Timer Button
     for (int i = 0; i < 2; i++) {
         auto digit = std::make_unique<Button>();
         digit->sprite.setTexture(digits);
@@ -166,25 +174,23 @@ GameScreen::GameScreen(int row, int col, int mines, std::string name) : row(row)
                     sf::Vector2i mousePos = sf::Mouse::getPosition(Game);
                     int tileX = mousePos.x / 32;
                     int tileY = mousePos.y / 32;
-                    if (sf::Mouse::isButtonPressed(sf::Mouse::Left) &&
-                        PausePlay->sprite.getGlobalBounds().contains(mousePos.x, mousePos.y)) {
+                    if (PausePlay->sprite.getGlobalBounds().contains(mousePos.x, mousePos.y)) {
+                        if(Running){updateTileTexture(true);} else {updateTileTexture(false);}
+                        Render(Game);
                         PausePlay->onClick();
                     }
-                    if (sf::Mouse::isButtonPressed(sf::Mouse::Left) &&
-                        FaceButton->sprite.getGlobalBounds().contains(mousePos.x, mousePos.y)) {
+                    if (FaceButton->sprite.getGlobalBounds().contains(mousePos.x, mousePos.y)) {
                         FaceButton->onClick();
-                    }
-                    //leaderboard button pressed
-                    if (sf::Mouse::isButtonPressed(sf::Mouse::Left) &&
-                        leaderboard->sprite.getGlobalBounds().contains(mousePos.x, mousePos.y)) {
+                    }//leaderboard button pressed
+                    if (!Running) { break; }
+                    if (leaderboard->sprite.getGlobalBounds().contains(mousePos.x, mousePos.y) && Running) {
                         PausePlay->onClick();
                         leaderboardstatus = true;
-                        updateTileTexture(true);
                         //todo: even if game is paused, after leaderboard is closed, all actions done when paused shows
+                        updateTileTexture(true);
                         PausePlay->onClick();
                     }
-                    if (!Running) { break; }
-                    if (won) { break; }
+                    if (won) {break;}
                     //checks which sprite was clicked
                     if (event.mouseButton.button == sf::Mouse::Left) {
                         if (tileX >= 0 && tileX < col && tileY >= 0 && tileY < row) {
@@ -196,6 +202,7 @@ GameScreen::GameScreen(int row, int col, int mines, std::string name) : row(row)
                             }
                             if (tile->mine) {
                                 // handle when the tile is a mine
+                                FaceButton->texture = loseTexture;
                                 GameScreen::HandleMines(tile);
                                 break;
                             }
@@ -219,10 +226,8 @@ GameScreen::GameScreen(int row, int col, int mines, std::string name) : row(row)
                                 tile->texture = hiddenTexture;
                                 count++;
                             } else {
-                                tile->flag = true;
-                                tile->texture = flagTexture;
-                                tile->bottom = hiddenTexture;
-                                count--;
+                                //todo: in the case of all the mines being flagged, the game should end
+                                handleFlags(tile);
                             }
                             CounterUpdate(row);
                         }
@@ -230,37 +235,7 @@ GameScreen::GameScreen(int row, int col, int mines, std::string name) : row(row)
                     break;
             }
         }
-        Game.clear(sf::Color::White);
-        // displays all the sprites
-        for (int i = 0; i < row; i++) {
-            for (int j = 0; j < col; j++) {
-                Tile *tile = tiles[i * col + j].get();
-                sf::Sprite bottomSprite(tile->bottom);
-                bottomSprite.setPosition(j * 32, i * 32);
-                Game.draw(bottomSprite);
-                sf::Sprite sprite(tile->texture);
-                //todo: revealed tiles when leaderboard is open
-                sprite.setPosition(j * 32, i * 32);
-                Game.draw(sprite);
-            }
-        }
-        //displays functions
-        Game.draw(FaceButton->sprite);
-        Game.draw(Debug->sprite);
-        Game.draw(PausePlay->sprite);
-        Game.draw(leaderboard->sprite);
-        for (const auto &i: Counter) {
-            Game.draw(i->sprite);
-        }
-        for (const auto &i: timer) {
-            Game.draw(i->sprite);
-        }
-        Game.display();
-        if (leaderboardstatus) {
-            leaderboard->onClick();
-            leaderboardstatus = false;
-            updateTileTexture(false);
-        }
+        Render(Game);
     }
 }
 
@@ -285,6 +260,7 @@ void GameScreen::HandleMines(Tile *tile) {
             t->bottom = hiddenTexture;;
         }
     }
+    FaceButton->texture = loseTexture; // Set the FaceButton sprite's texture to the lose face texture
     Validate();
 }
 
@@ -313,7 +289,7 @@ void GameScreen::HandleNotMines(Tile *tile) {
     Validate();
 }
 
-void GameScreen::CounterUpdate(int row) {
+void GameScreen::CounterUpdate(int i) {
     //updates the count
     //abs count to have only positive value
     int absCount = abs(count);
@@ -323,10 +299,9 @@ void GameScreen::CounterUpdate(int row) {
             auto neg = std::make_unique<Button>();
             neg->sprite.setTexture(digits);
             neg->sprite.setTextureRect(sf::IntRect(10 * 21, 0, 21, 32)); // Set to '-'
-            neg->sprite.setPosition(12, 32 * (row + 0.5) + 16);
+            neg->sprite.setPosition(12, 32 * (i + 0.5) + 16);
             Counter.insert(Counter.begin(), std::move(neg));
         }
-        //
         while (Counter.size() > 4) {
             Counter.erase(Counter.begin() + 1);
         }
@@ -368,10 +343,13 @@ void GameScreen::Validate() {
         return !t->mine && t->revealed;
     });
 
-    if (revealedTiles == total) {
+    int correctlyFlaggedMines = std::count_if(tiles.begin(), tiles.end(), [](const std::unique_ptr<Tile> &t) {
+        return t->mine && t->flag;
+    });
+
+    if (revealedTiles == total || correctlyFlaggedMines == count) {
         printf("won");
         won = true;
-        //todo: should update screen first then do the leaderboard
         leaderboardstatus = true;
     }
 }
@@ -421,7 +399,12 @@ void GameScreen::updateTileTexture(bool revealAll) {
                 if (tile->mine) {
                     tile->texture = mineTexture;
                 } else {
-                    HandleNotMines(tile.get());
+                    if (tile->neighborMines > 0) {
+                        std::string filename = "files/images/number_" + std::to_string(tile->neighborMines) + ".png";
+                        tile->texture.loadFromFile(filename);
+                    } else {
+                        tile->texture = revealedTexture;
+                    }
                 }
             } else if (tile->flag) {
                 tile->texture = flagTexture;
@@ -429,5 +412,58 @@ void GameScreen::updateTileTexture(bool revealAll) {
                 tile->texture = hiddenTexture;
             }
         }
+    }
+}
+
+void GameScreen::Render(sf::RenderWindow &Game) {
+    Game.clear(sf::Color::White);
+    // displays all the sprites
+    for (int i = 0; i < row; i++) {
+        for (int j = 0; j < col; j++) {
+            Tile *tile = tiles[i * col + j].get();
+            sf::Sprite bottomSprite(tile->bottom);
+            bottomSprite.setPosition(j * 32, i * 32);
+            Game.draw(bottomSprite);
+            sf::Sprite sprite(tile->texture);
+            sprite.setPosition(j * 32, i * 32);
+            Game.draw(sprite);
+        }
+    }
+    //displays functions
+    Game.draw(FaceButton->sprite);
+    Game.draw(Debug->sprite);
+    Game.draw(PausePlay->sprite);
+    Game.draw(leaderboard->sprite);
+    for (const auto &i: Counter) {
+        Game.draw(i->sprite);
+    }
+    for (const auto &i: timer) {
+        Game.draw(i->sprite);
+    }
+    Game.display();
+    if (leaderboardstatus) {
+        leaderboard->onClick();
+        leaderboardstatus = false;
+        updateTileTexture(false);
+    }
+};
+
+void GameScreen::handleFlags(Tile *tile) {
+    //handles the flags
+    tile->flag = true;
+    tile->texture = flagTexture;
+    count--;
+    if (count == 0) { return; }
+    // Check if all mines are flagged
+    bool allMinesFlagged = true;
+    for (auto &t: tiles) {
+        if (t->mine && !t->flag) {
+            allMinesFlagged = false;
+            break;
+        }
+    }
+    if (allMinesFlagged) {
+        won = true;
+        leaderboardstatus = true;
     }
 }

@@ -30,6 +30,7 @@ private:
     int row;
     int col;
     int count;
+    int mineCount;
     int total;
     bool RestartStatus = false;
     bool leaderboardstatus = false;
@@ -43,6 +44,8 @@ private:
     sf::Texture hiddenTexture;
     sf::Texture flagTexture;
     sf::Texture mineTexture;
+    sf::Texture winTexture;
+    sf::Texture loseTexture;
     std::chrono::time_point<std::chrono::system_clock> start;
     // pointers of buttons and tiles
     std::vector<std::unique_ptr<Tile>> tiles;
@@ -61,9 +64,11 @@ public:
 
     void HandleNotMines(Tile *tile);
 
+    void handleFlags(Tile *tile);
+
     bool getRestartStatus() const;
 
-    void CounterUpdate(int row);
+    void CounterUpdate(int i);
 
     void TimerUpdate();
 
@@ -72,6 +77,8 @@ public:
     void addToLeaderboard();
 
     void displayTiles(GameScreen &game);
+
+    void Render(sf::RenderWindow &Game);
 };
 
 
