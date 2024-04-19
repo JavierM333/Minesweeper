@@ -47,6 +47,7 @@ private:
     sf::Texture winTexture;
     sf::Texture loseTexture;
     sf::Texture happyTexture;
+    sf::Texture debugTexture;
     std::chrono::time_point<std::chrono::system_clock> start;
     // pointers of buttons and tiles
     std::vector<std::unique_ptr<Tile>> tiles;

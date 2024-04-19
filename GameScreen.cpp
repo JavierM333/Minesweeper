@@ -30,6 +30,8 @@ GameScreen::GameScreen(int row, int col, int mines, std::string name) : row(row)
     loseTexture.loadFromFile("files/images/face_lose.png");
     // Texture for happy face
     happyTexture.loadFromFile("files/images/face_happy.png");
+    // Texture for debug face
+    debugTexture.loadFromFile("files/images/debug.png");
     for (int i = 0; i < row * col; i++) {
         auto tile = std::make_unique<Tile>();
         tile->texture = hiddenTexture;
@@ -71,7 +73,7 @@ GameScreen::GameScreen(int row, int col, int mines, std::string name) : row(row)
     };
     // Debug button
     Debug = std::make_unique<Button>();
-    Debug->texture.loadFromFile("files/images/debug.png");
+    Debug->texture = debugTexture;
     Debug->sprite.setTexture(Debug->texture);
     Debug->sprite.setPosition((col * 32) - 304, 32 * (row + 0.5));
     Debug->onClick = [this]() {
@@ -94,7 +96,6 @@ GameScreen::GameScreen(int row, int col, int mines, std::string name) : row(row)
     };
 
     // PlayPause button
-    //todo:: pause should reveal the whole board
     PausePlay = std::make_unique<Button>();
     PausePlay->texture.loadFromFile("files/images/play.png");
     PausePlay->sprite.setTexture(PausePlay->texture);
@@ -173,67 +174,67 @@ GameScreen::GameScreen(int row, int col, int mines, std::string name) : row(row)
                     break;
                     // handles the mouse click, checking mouse coordinates
                 case sf::Event::MouseButtonPressed:
-                    sf::Vector2i mousePos = sf::Mouse::getPosition(Game);
-                    int tileX = mousePos.x / 32;
-                    int tileY = mousePos.y / 32;
-                    if (PausePlay->sprite.getGlobalBounds().contains(mousePos.x, mousePos.y)) {
-                        if(Running){updateTileTexture(true);} else {updateTileTexture(false);}
-                        Render(Game);
-                        PausePlay->onClick();
-                    }
-                    if (FaceButton->sprite.getGlobalBounds().contains(mousePos.x, mousePos.y)) {
-                        FaceButton->onClick();
-                    }//leaderboard button pressed
-                    if (!Running) { break; }
-                    if (leaderboard->sprite.getGlobalBounds().contains(mousePos.x, mousePos.y) && Running) {
-                        PausePlay->onClick();
-                        leaderboardstatus = true;
-                        //todo: even if game is paused, after leaderboard is closed, all actions done when paused shows
-                        //todo: pause button works (once) after game is won and leaderboard is closed
-                        updateTileTexture(true);
-                        PausePlay->onClick();
-                    }
-                    if (won) {break;}
-                    //checks which sprite was clicked
-                    if (event.mouseButton.button == sf::Mouse::Left) {
-                        if (tileX >= 0 && tileX < col && tileY >= 0 && tileY < row) {
-                            Tile *tile = tiles[tileY * col + tileX].get();
-                            if (tile->revealed || tile->flag) { break; }
-                            if (tile->flag) {
-                                count++;
+                        sf::Vector2i mousePos = sf::Mouse::getPosition(Game);
+                        int tileX = mousePos.x / 32;
+                        int tileY = mousePos.y / 32;
+                        if (PausePlay->sprite.getGlobalBounds().contains(mousePos.x, mousePos.y)) {
+                            if (won) { break; }
+                            if (Running) { updateTileTexture(true); } else { updateTileTexture(false); }
+                            Render(Game);
+                            PausePlay->onClick();
+                        }
+                        if (FaceButton->sprite.getGlobalBounds().contains(mousePos.x, mousePos.y)) {
+                            FaceButton->onClick();
+                        }//leaderboard button pressed
+                        if (!Running) { break; }
+                        if (leaderboard->sprite.getGlobalBounds().contains(mousePos.x, mousePos.y) && Running) {
+                            PausePlay->onClick();
+                            leaderboardstatus = true;
+                            //todo: even if game is paused, after leaderboard is closed, all actions done when paused shows
+                            updateTileTexture(true);
+                            PausePlay->onClick();
+                        }
+                        if (won) { break; }
+                        //checks which sprite was clicked
+                        if (event.mouseButton.button == sf::Mouse::Left) {
+                            if (tileX >= 0 && tileX < col && tileY >= 0 && tileY < row) {
+                                Tile *tile = tiles[tileY * col + tileX].get();
+                                if (tile->revealed || tile->flag) { break; }
+                                if (tile->flag) {
+                                    count++;
+                                    CounterUpdate(row);
+                                }
+                                if (tile->mine) {
+                                    // handle when the tile is a mine
+                                    FaceButton->texture = loseTexture;
+                                    GameScreen::HandleMines(tile);
+                                    break;
+                                }
+                                // handle when the tile is not a mine
+                                HandleNotMines(tile);
+                                //implement Counter to count the number of tiles that are mines
+
+                            }
+                            // handle when the face is clicked
+                            if (sf::Mouse::isButtonPressed(sf::Mouse::Left) &&
+                                Debug->sprite.getGlobalBounds().contains(mousePos.x, mousePos.y)) {
+                                Debug->onClick();
+                            }
+                        }
+                        if (event.mouseButton.button == sf::Mouse::Right) {
+                            if (tileX >= 0 && tileX < col && tileY >= 0 && tileY < row) {
+                                Tile *tile = tiles[tileY * col + tileX].get();
+                                if (tile->revealed) { break; }
+                                if (tile->flag) {
+                                    tile->flag = false;
+                                    tile->texture = hiddenTexture;
+                                    count++;
+                                } else {
+                                    handleFlags(tile);
+                                }
                                 CounterUpdate(row);
                             }
-                            if (tile->mine) {
-                                // handle when the tile is a mine
-                                FaceButton->texture = loseTexture;
-                                GameScreen::HandleMines(tile);
-                                break;
-                            }
-                            // handle when the tile is not a mine
-                            HandleNotMines(tile);
-                            //implement Counter to count the number of tiles that are mines
-
                         }
-                        // handle when the face is clicked
-                        if (sf::Mouse::isButtonPressed(sf::Mouse::Left) &&
-                            Debug->sprite.getGlobalBounds().contains(mousePos.x, mousePos.y)) {
-                            Debug->onClick();
-                        }
-                    }
-                    if (event.mouseButton.button == sf::Mouse::Right) {
-                        if (tileX >= 0 && tileX < col && tileY >= 0 && tileY < row) {
-                            Tile *tile = tiles[tileY * col + tileX].get();
-                            if (tile->revealed) { break; }
-                            if (tile->flag) {
-                                tile->flag = false;
-                                tile->texture = hiddenTexture;
-                                count++;
-                            } else {
-                                handleFlags(tile);
-                            }
-                            CounterUpdate(row);
-                        }
-                    }
                     break;
             }
         }
@@ -264,7 +265,9 @@ void GameScreen::HandleMines(Tile *tile) {
         }
     }
     FaceButton->texture = loseTexture; // Set the FaceButton sprite's texture to the lose face texture
-    Validate();
+    Running = false;
+    leaderboardstatus = true;
+    printf("lost");
 }
 
 void GameScreen::HandleNotMines(Tile *tile) {
