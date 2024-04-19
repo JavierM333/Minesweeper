@@ -28,6 +28,8 @@ GameScreen::GameScreen(int row, int col, int mines, std::string name) : row(row)
     winTexture.loadFromFile("files/images/face_win.png");
     // Texture for lose face
     loseTexture.loadFromFile("files/images/face_lose.png");
+    // Texture for happy face
+    happyTexture.loadFromFile("files/images/face_happy.png");
     for (int i = 0; i < row * col; i++) {
         auto tile = std::make_unique<Tile>();
         tile->texture = hiddenTexture;
@@ -61,7 +63,7 @@ GameScreen::GameScreen(int row, int col, int mines, std::string name) : row(row)
     }
     // happy face
     FaceButton = std::make_unique<Button>();
-    FaceButton->texture.loadFromFile("files/images/face_happy.png");
+    FaceButton->texture = happyTexture;
     FaceButton->sprite.setTexture(FaceButton->texture);
     FaceButton->sprite.setPosition(((col / 2) * 32) - 32, 32 * (row + 0.5));
     FaceButton->onClick = [this]() {
@@ -187,6 +189,7 @@ GameScreen::GameScreen(int row, int col, int mines, std::string name) : row(row)
                         PausePlay->onClick();
                         leaderboardstatus = true;
                         //todo: even if game is paused, after leaderboard is closed, all actions done when paused shows
+                        //todo: pause button works (once) after game is won and leaderboard is closed
                         updateTileTexture(true);
                         PausePlay->onClick();
                     }
@@ -226,7 +229,6 @@ GameScreen::GameScreen(int row, int col, int mines, std::string name) : row(row)
                                 tile->texture = hiddenTexture;
                                 count++;
                             } else {
-                                //todo: in the case of all the mines being flagged, the game should end
                                 handleFlags(tile);
                             }
                             CounterUpdate(row);
@@ -251,6 +253,7 @@ bool GameScreen::getRestartStatus() const {
 
 void GameScreen::HandleMines(Tile *tile) {
     //reveals all mines
+    //todo: win face shows when you press a mine instead of loss face
     tile->revealed = true;
     tile->texture = mineTexture;
     for (auto &t: tiles) {
@@ -351,6 +354,7 @@ void GameScreen::Validate() {
         printf("won");
         won = true;
         leaderboardstatus = true;
+        FaceButton->texture = winTexture;
     }
 }
 
@@ -362,8 +366,7 @@ void GameScreen::addToLeaderboard() {
     if (minutes.size() == 1) minutes = "0" + minutes;
     if (seconds.size() == 1) seconds = "0" + seconds;
     string time = minutes + ":" + seconds;
-    string fullLeaderBoard = time + ", " + name;
-
+    string nameAsterick = name + "*"; // Add asterisk to new score
     std::fstream file("files/leaderboard.txt", std::ios::in | std::ios::out);
     std::vector<std::pair<std::string, std::string>> scores;
     std::string line;
@@ -371,11 +374,15 @@ void GameScreen::addToLeaderboard() {
         std::istringstream iss(line);
         std::string time, name;
         if (!(std::getline(iss, time, ',') >> name)) { break; } // error
+        // Remove asterisk from old scores
+        if (name.back() == '*') {
+            name.pop_back();
+        }
         scores.emplace_back(time, name);
     }
     file.close(); // Close the file after reading
 
-    scores.emplace_back(time, name);
+    scores.emplace_back(time, nameAsterick);
     std::sort(scores.begin(), scores.end());
 
     if (scores.size() > 5) {
@@ -452,7 +459,7 @@ void GameScreen::handleFlags(Tile *tile) {
     //handles the flags
     tile->flag = true;
     tile->texture = flagTexture;
-    count--;
+    tile->bottom = hiddenTexture;
     if (count == 0) { return; }
     // Check if all mines are flagged
     bool allMinesFlagged = true;
@@ -462,6 +469,7 @@ void GameScreen::handleFlags(Tile *tile) {
             break;
         }
     }
+    count--;
     if (allMinesFlagged) {
         won = true;
         leaderboardstatus = true;

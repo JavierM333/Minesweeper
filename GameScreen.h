@@ -46,6 +46,7 @@ private:
     sf::Texture mineTexture;
     sf::Texture winTexture;
     sf::Texture loseTexture;
+    sf::Texture happyTexture;
     std::chrono::time_point<std::chrono::system_clock> start;
     // pointers of buttons and tiles
     std::vector<std::unique_ptr<Tile>> tiles;
@@ -55,30 +56,19 @@ private:
     std::unique_ptr<Button> Debug;
     std::unique_ptr<Button> PausePlay;
     std::vector<std::unique_ptr<Button>> timer;
+    void CounterUpdate(int i);
+    void TimerUpdate();
+    void Validate();
+    void addToLeaderboard();
+    void displayTiles(GameScreen &game);
+    void Render(sf::RenderWindow &Game);
+    void updateTileTexture(bool revealAll);
+    void HandleMines(Tile *tile);
+    void HandleNotMines(Tile *tile);
+    void handleFlags(Tile *tile);
 public:
     GameScreen(int row, int col, int mines, std::string string);
-
-    void updateTileTexture(bool revealAll);
-
-    void HandleMines(Tile *tile);
-
-    void HandleNotMines(Tile *tile);
-
-    void handleFlags(Tile *tile);
-
     bool getRestartStatus() const;
-
-    void CounterUpdate(int i);
-
-    void TimerUpdate();
-
-    void Validate();
-
-    void addToLeaderboard();
-
-    void displayTiles(GameScreen &game);
-
-    void Render(sf::RenderWindow &Game);
 };
 
 

@@ -57,7 +57,6 @@ void Leaderboard::readScores() {
     std::string name;
     while (getline(file, score, ',')) {
         getline(file, name);
-        printf("%s\n", score.c_str());
         scores[timeToSeconds(score)] = {score, name};
     }
     file.close();
