@@ -57,18 +57,30 @@ private:
     std::unique_ptr<Button> Debug;
     std::unique_ptr<Button> PausePlay;
     std::vector<std::unique_ptr<Button>> timer;
+
     void CounterUpdate(int i);
+
     void TimerUpdate();
+
     void Validate();
+
     void addToLeaderboard();
+
     void displayTiles(GameScreen &game);
+
     void Render(sf::RenderWindow &Game);
+
     void updateTileTexture(bool revealAll);
+
     void HandleMines(Tile *tile);
+
     void HandleNotMines(Tile *tile);
+
     void handleFlags(Tile *tile);
+
 public:
     GameScreen(int row, int col, int mines, std::string string);
+
     bool getRestartStatus() const;
 };
 

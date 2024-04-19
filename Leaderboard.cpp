@@ -4,7 +4,8 @@
 #include "Leaderboard.h"
 
 Leaderboard::Leaderboard(int row, int col) : width(col * 16), height((row * 16) + 50),
-                                             leaderboardWindow(sf::VideoMode(width, height), "Leaderboard" , sf::Style::Close) {
+                                             leaderboardWindow(sf::VideoMode(width, height), "Leaderboard",
+                                                               sf::Style::Close) {
     isOpen = true;
     readScores();
     fillScores();
