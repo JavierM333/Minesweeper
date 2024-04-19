@@ -354,6 +354,14 @@ void GameScreen::Validate() {
     });
 
     if (revealedTiles == total || correctlyFlaggedMines == count) {
+        for(auto& t : tiles){
+            if(t->mine && !t->flag){
+                t->texture = flagTexture;
+                t->flag = true;
+            }
+        }
+        count = 0;
+        CounterUpdate(row);
         printf("won");
         won = true;
         leaderboardstatus = true;
