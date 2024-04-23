@@ -37,6 +37,7 @@ private:
     bool DebugMode = false;
     bool Running = true;
     bool won = false;
+    bool lose = false;
     int paused = 0;
     //texture for the timer, counter
     sf::Texture digits;

@@ -33,7 +33,7 @@ GameScreen::GameScreen(int row, int col, int mines, std::string name) : row(row)
     // Texture for debug face
     debugTexture.loadFromFile("files/images/debug.png");
     for (int i = 0; i < row * col; i++) {
-        auto tile = std::make_unique<Tile>();
+        auto tile = std::make_unique<Tile>(); //smart pointers, not needed but useful
         tile->texture = hiddenTexture;
         if (static_cast<double>(rand()) / RAND_MAX < mineRatio && mines > 0) {
             tile->mine = true;
@@ -90,6 +90,7 @@ GameScreen::GameScreen(int row, int col, int mines, std::string name) : row(row)
                     t->texture = hiddenTexture;
                 } else if (t->flag) {
                     t->texture = flagTexture;
+                    t->bottom = hiddenTexture;
                 }
             }
         }
@@ -97,17 +98,17 @@ GameScreen::GameScreen(int row, int col, int mines, std::string name) : row(row)
 
     // PlayPause button
     PausePlay = std::make_unique<Button>();
-    PausePlay->texture.loadFromFile("files/images/play.png");
+    PausePlay->texture.loadFromFile("files/images/pause.png");
     PausePlay->sprite.setTexture(PausePlay->texture);
     PausePlay->sprite.setPosition((col * 32) - 240, 32 * (row + 0.5));
     PausePlay->onClick = [this]() {
-        if (won) { return; }
+        if (won || lose) { return; }
         Running = !Running; // Toggle Running
         if (Running) {
-            PausePlay->texture.loadFromFile("files/images/play.png");
+            PausePlay->texture.loadFromFile("files/images/pause.png");
             start = std::chrono::system_clock::now() - std::chrono::seconds(paused);
         } else {
-            PausePlay->texture.loadFromFile("files/images/pause.png");
+            PausePlay->texture.loadFromFile("files/images/play.png");
             paused = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - start).count();
         }
     };
@@ -162,8 +163,11 @@ GameScreen::GameScreen(int row, int col, int mines, std::string name) : row(row)
         if (getRestartStatus()) {
             Game.close();
         }
-        sf::Event event{};
+        sf::Event event;
+
         // handle events for the window
+
+        // if leaderboard is open, no events should be handled
         while (Game.pollEvent(event)) {
             switch (event.type) {
                 default:
@@ -199,7 +203,7 @@ GameScreen::GameScreen(int row, int col, int mines, std::string name) : row(row)
                     if (event.mouseButton.button == sf::Mouse::Left) {
                         if (tileX >= 0 && tileX < col && tileY >= 0 && tileY < row) {
                             Tile *tile = tiles[tileY * col + tileX].get();
-                            if (tile->revealed || tile->flag) { break; }
+                            if (tile->revealed) { break; }
                             if (tile->flag) {
                                 count++;
                                 CounterUpdate(row);
@@ -213,7 +217,6 @@ GameScreen::GameScreen(int row, int col, int mines, std::string name) : row(row)
                             // handle when the tile is not a mine
                             HandleNotMines(tile);
                             //implement Counter to count the number of tiles that are mines
-
                         }
                         // handle when the face is clicked
                         if (sf::Mouse::isButtonPressed(sf::Mouse::Left) &&
@@ -266,7 +269,7 @@ void GameScreen::HandleMines(Tile *tile) {
     }
     FaceButton->texture = loseTexture; // Set the FaceButton sprite's texture to the lose face texture
     Running = false;
-    leaderboardstatus = true;
+    lose = true;
     printf("lost");
 }
 
@@ -281,12 +284,14 @@ void GameScreen::HandleNotMines(Tile *tile) {
     tile->revealed = true;
     if (tile->neighborMines > 0) {
         // if there are nearby mines, display the amount of mines nearby
+        if(!tile->flag){
         tile->bottom = revealedTexture;
         std::string filename = "files/images/number_" + std::to_string(tile->neighborMines) + ".png";
         tile->texture.loadFromFile(filename);
+        }
     } else {
         // makes all the tiles that are null pointers revealed
-        tile->texture = revealedTexture;
+        if(!tile->flag){tile->texture = revealedTexture; }
         for (auto t: tile->neighbors) {
             if (t == nullptr) { continue; }
             HandleNotMines(t);
@@ -409,6 +414,7 @@ void GameScreen::addToLeaderboard() {
 }
 
 void GameScreen::updateTileTexture(bool revealAll) {
+    if(lose){ return; }
     for (auto &tile: tiles) {
         if (revealAll) {
             tile->texture = revealedTexture;
@@ -461,6 +467,8 @@ void GameScreen::Render(sf::RenderWindow &Game) {
     Game.display();
     if (leaderboardstatus) {
         leaderboard->onClick();
+        sf::Event event;
+        while(Game.pollEvent(event)){};
         leaderboardstatus = false;
         updateTileTexture(false);
     }
@@ -471,18 +479,6 @@ void GameScreen::handleFlags(Tile *tile) {
     tile->flag = true;
     tile->texture = flagTexture;
     tile->bottom = hiddenTexture;
-    if (count == 0) { return; }
-    // Check if all mines are flagged
-    bool allMinesFlagged = true;
-    for (auto &t: tiles) {
-        if (t->mine && !t->flag) {
-            allMinesFlagged = false;
-            break;
-        }
-    }
     count--;
-    if (allMinesFlagged) {
-        won = true;
-        leaderboardstatus = true;
-    }
+    CounterUpdate(row);
 }
